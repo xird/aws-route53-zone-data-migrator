@@ -19,8 +19,19 @@ def main(inputfile, outputfile, old_hosted_zone_id, new_hosted_zone_id, comment)
       Change['Action'] = "CREATE"
       Change['ResourceRecordSet'] = ResourceRecordSet
 
-      # NS and SOA records are not migrated.
-      if ResourceRecordSet['Type'] not in ("NS", "SOA"):
+      # Following records are not migrated:
+      # - Domain top level NS records
+      # - SOA records
+      toBeMigrated = True
+
+      if ResourceRecordSet['Type'] == "SOA":
+        toBeMigrated = False
+
+      if ResourceRecordSet['Type'] == "NS":
+        if len(ResourceRecordSet['Name'].split(".")) == 3:
+          toBeMigrated = False
+
+      if toBeMigrated:
          # Any alias records that point to this Hosted Zone must be moved to the
          # bottom of the list, to make sure that the alias target is defined
          # before the alias.
